@@ -210,7 +210,8 @@
   }
   if (typeof document === 'undefined') return;
 
-  const SAVE_KEY = 'ckmyapps.frisbee.save.v1', SOUND_KEY = 'ckmyapps.frisbee.sound';
+  const SAVE_KEY = 'ckmyapps.frisbee.color.save.v1', LEGACY_SAVE_KEY = 'ckmyapps.frisbee.save.v1',
+        MIGRATION_KEY = 'ckmyapps.frisbee.color.migrated.v1', SOUND_KEY = 'ckmyapps.frisbee.sound';
   const canvas = document.getElementById('course');
   const context = canvas?.getContext('2d');
   const back = document.createElement('canvas');
@@ -223,11 +224,25 @@
   let audio = null, menuMusic = false, nextNote = 0, noteIndex = 0;
   const held = new Map(), listeners = new Set();
   const readSave = () => {
-    try {const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return validSave(s) ? s : null;} catch {return null;}
+    try {
+      const saved = localStorage.getItem(SAVE_KEY);
+      if (saved !== null) {
+        const s = JSON.parse(saved);
+        return validSave(s) ? s : null;
+      }
+      if (localStorage.getItem(MIGRATION_KEY) === '1') return null;
+      const legacy = JSON.parse(localStorage.getItem(LEGACY_SAVE_KEY));
+      if (!validSave(legacy)) return null;
+      localStorage.setItem(SAVE_KEY, JSON.stringify(legacy));
+      localStorage.setItem(MIGRATION_KEY, '1');
+      return legacy;
+    } catch {return null;}
   };
   function save() {
     try {
       if (!state) return;
+      // A finished or newly started game must never resurrect the legacy save.
+      localStorage.setItem(MIGRATION_KEY, '1');
       if (state.phase === 'finished') localStorage.removeItem(SAVE_KEY);
       else localStorage.setItem(SAVE_KEY, JSON.stringify(state));
     } catch { /* Private mode still permits local play. */ }
