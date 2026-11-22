@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 292" shape-rendering="crispEdges" aria-hidden="true">
+<defs><pattern id="grid" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M16 0H0V16" fill="none" stroke="#49614c" stroke-opacity=".45"/></pattern>
+<g id="tree"><path fill="#121e16" d="M-18 11h37v4h-37z"/><path fill="#795c37" d="M-2-2h4v15h-4z"/><path fill="#1b4931" d="M-13 6H13V0H9v-5H6v-6H3v-6h-6v6h-3v6h-3v5h-4z"/><path fill="#467353" d="M-3-17h3v22h-12V0h4v-5h3v-6h2z"/></g>
+</defs>
+<path fill="#273a2d" d="M0 0h320v292H0z"/><path fill="url(#grid)" d="M0 0h320v292H0z"/>
+<path fill="#3d5c42" d="M46 230h26v-26h23v-25h22v-24h22v-23h22v-21h27V93h22V77h22V59h38v12h19v30h-14v33h-22v27h-26v22h-23v21h-22v20h-30v21h-27v19H64v-15H46z"/>
+<path fill="#546d44" d="M62 230h25v-26h22v-25h22v-24h22v-24h23v-18h27V96h22V79h45v25h-13v28h-22v24h-23v19h-23v21h-24v20h-27v19h-27v17H78v-9H62z"/>
+<path fill="#243b39" d="M171 242h36v-13h24v-15h22v-15h27v-15h40v108H159v-24h12z"/><path fill="#386361" d="M182 246h36v-14h23v-14h24v-15h25v-14h30v103H171v-21h11z"/><path fill="#56827a" d="M208 272h25v2h-25zm52-34h30v2h-30zm30 31h25v2h-25zm-47 14h18v2h-18z"/>
+<use href="#tree" x="31" y="85"/><use href="#tree" x="56" y="61"/><use href="#tree" x="81" y="85"/><use href="#tree" x="101" y="52"/><use href="#tree" x="132" y="70"/><use href="#tree" x="158" y="40"/><use href="#tree" x="187" y="60"/><use href="#tree" x="219" y="35"/><use href="#tree" x="273" y="37"/><use href="#tree" x="306" y="66"/><use href="#tree" x="21" y="130"/><use href="#tree" x="47" y="141"/><use href="#tree" x="77" y="124"/><use href="#tree" x="20" y="195"/><use href="#tree" x="46" y="183"/><use href="#tree" x="299" y="142"/><use href="#tree" x="278" y="167"/><use href="#tree" x="103" y="280"/><use href="#tree" x="34" y="268"/>
+<path d="M81 236Q153 140 248 94" fill="none" stroke="#f1ad54" stroke-width="2" stroke-dasharray="3 7"/>
+<ellipse cx="81" cy="236" rx="10" ry="5" fill="#f3af52"/><ellipse cx="81" cy="235" rx="6" ry="2" fill="#ffe1a0"/>
+<path fill="#24352a" d="M235 101h26v4h-26z"/><path fill="#cdd5b8" d="M246 69h4v35h-4zM235 71h26v4h-26zM234 89h28v4h-28zM237 93h22v5h-22z"/><path stroke="#dbe0c9" stroke-width="2" d="m237 76 5 13m17-13-5 13m-6-13v13"/><path fill="#f3af52" d="M234 69h28v5h-28z"/>
+<path fill="none" stroke="#c5c29d" stroke-width="1" stroke-opacity=".55" d="M13 46V13h32m230 0h32v33M13 246v33h32m230 0h32v-33"/>
+</svg>
