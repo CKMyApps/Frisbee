@@ -241,9 +241,8 @@
   function save() {
     try {
       if (!state) return;
-      // A finished or newly started game must never resurrect the legacy save.
-      localStorage.setItem(MIGRATION_KEY, '1');
-      if (state.phase === 'finished') localStorage.removeItem(SAVE_KEY);
+      // Keep a finished round ineligible for legacy fallback with one slot write.
+      if (state.phase === 'finished') localStorage.setItem(SAVE_KEY, '{"completed":true}');
       else localStorage.setItem(SAVE_KEY, JSON.stringify(state));
     } catch { /* Private mode still permits local play. */ }
   }
