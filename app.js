@@ -118,13 +118,16 @@
     const active = s.players[s.activePlayer];
     put($('hud-hole'), String(s.hole).padStart(2,'0') + ' / ' + String(s.totalHoles).padStart(2,'0'));
     put($('hud-par'), s.par); put($('hud-throws'), active?.strokes ?? 0);
-    put($('hud-wind'), strWind(s.wind));
+    const wind = strWind(s.wind);
+    const strong = s.venue === 'Rooftop';
+    put($('hud-wind'), wind + (strong ? ' STRONG' : ''));
+    $('hud-wind').title = wind + ' wind' + (strong ? ' (strong rooftop wind)' : '');
     put($('course-label'), (s.course || 'Round in play').toUpperCase());
     put($('who'), active?.name ?? ''); put($('game-message'), s.message || '');
     const power = Math.round(s.power || 0);
     $('power-meter').value = power; put($('power-text'), power + '%');
     for (const button of controlButtons) button.disabled = s.phase !== 'aim';
-    const key = JSON.stringify(s.players.map(p=>[p.name,p.holeScores,p.total]));
+    const key = JSON.stringify([s.totalHoles,s.players.map(p=>[p.name,p.holeScores,p.total])]);
     if (key !== scoreKey) { scorecard.replaceChildren(makeScore(s)); scoreKey = key; }
     const modal = ['handoff','holeComplete','finished'].includes(s.phase);
     overlay.hidden = !modal;
@@ -147,7 +150,7 @@
         const table = document.createElement('div'); table.className = 'scorecard'; table.append(makeScore(s)); body.append(table);
       }
       nextButton.hidden = finish;
-      put(nextButton, handoff ? 'READY TO THROW' : s.hole === s.totalHoles ? 'FINAL SCORE' : 'NEXT HOLE');
+      put(nextButton, handoff ? 'READY TO THROW' : s.hole === s.totalHoles ? 'FINAL SCORE' : s.nextVenue && s.nextVenue !== s.venue ? 'NEXT: ' + s.nextVenue.toUpperCase() : 'NEXT HOLE');
       $('finish-menu').hidden = !finish;
       (finish ? $('finish-menu') : nextButton).focus({preventScroll:true});
     }

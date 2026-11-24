@@ -4,8 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101914"><meta name="description" content="A retro disc golf game. Read the wind, charge your throw and find the chains.">
 <title>FRISBEE · CK MY APPS</title>
-<link rel="icon" href="./assets/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png"><link rel="stylesheet" href="./style.css">
-<script defer src="./game.js"></script><script defer src="./app.js"></script>
+<link rel="icon" href="./assets/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png"><link rel="stylesheet" href="./style.css?v=urban-1">
+<script defer src="./game.js?v=urban-1"></script><script defer src="./app.js?v=urban-1"></script>
 </head>
 <body>
 <header class="mast"><button class="brand" data-panel="menu" aria-label="FRISBEE main menu">CK MY APPS <small>◦ ARCADE</small></button><span class="build">DISC GOLF <b>01</b></span></header>
@@ -20,13 +20,13 @@
         <div class="menu-bottom"><button data-panel="how">HOW TO PLAY</button><button data-panel="settings">SETTINGS</button></div>
       </nav>
     </div>
-    <aside class="hero-field" aria-hidden="true"><span class="field-top">COURSE MAP <b>01 / 03</b></span><img src="./assets/course.svg" alt=""><span class="field-bottom">PINE GLADE <b>PAR 3</b></span></aside>
+    <aside class="hero-field" aria-hidden="true"><span class="field-top">COURSE MAP <b>01 / 05</b></span><img src="./assets/course.svg" alt=""><span class="field-bottom">PINE GLADE <b>PAR 3</b></span></aside>
   </div>
-  <div class="strip"><span><b>03</b> DISTINCT HOLES</span><span><b>01–04</b> LOCAL PLAYERS</span><span><b>VS</b> CPU MODE</span></div>
+  <div class="strip"><span><b>05</b> HOLES · 03 VENUES</span><span><b>01–04</b> LOCAL PLAYERS</span><span><b>VS</b> CPU MODE</span></div>
 </section>
 <section data-view="setup" class="screen" hidden>
   <button class="back" data-panel="menu">BACK TO MENU</button>
-  <span class="eyebrow">TEE 01 / 03</span><h2>New Game</h2><p>Choose how you want to play.</p>
+  <span class="eyebrow">TEE 01 / 05</span><h2>New Game</h2><p>Choose how you want to play.</p>
   <div class="modes" role="group" aria-label="Game mode">
     <button data-mode="solo" aria-pressed="true"><b>SOLO</b><small>Play against par</small></button>
     <button data-mode="cpu" aria-pressed="false"><b>1 VS CPU</b><small>Challenge the computer</small></button>
@@ -40,8 +40,8 @@
 <section data-view="how" class="screen" hidden>
   <button class="back" data-panel="menu">BACK TO MENU</button>
   <span class="eyebrow">THE QUICK GUIDE</span><h2>How to Play</h2>
-  <div class="rules"><div><b>01 / AIM</b><p>Tap or click the course to aim. Fine-tune with the on-screen controls, the left and right arrows, or A and D.</p></div><div><b>02 / THROW</b><p>Hold THROW or Space to build power, then release. Use less power near the basket and allow for the wind.</p></div><div><b>03 / SCORE</b><p>Sink the disc in the chain basket. Water and out-of-bounds cost an extra stroke. Lowest total after all three holes wins.</p></div></div>
-  <p class="notice">Your unfinished round is saved in this browser. Local multiplayer uses one shared screen.</p>
+  <div class="rules"><div><b>01 / AIM</b><p>Tap or click the course to aim. Fine-tune with the on-screen controls, the left and right arrows, or A and D.</p></div><div><b>02 / THROW</b><p>Hold THROW or Space to build power, then release. Use less power near the basket and allow for the wind.</p></div><div><b>03 / SCORE</b><p>Sink the disc in the chain basket. Lowest total wins. New rounds play the three original holes, then Street, then Rooftop. Water, out-of-bounds and missing a roof cost one stroke.</p></div></div>
+  <p class="notice">Read the wind before throwing, especially on Rooftop. You can carry the disc over a gap, but it must land on a roof. Unfinished rounds save in this browser.</p>
 </section>
 <section data-view="settings" class="screen" hidden>
   <button class="back" data-panel="menu">BACK TO MENU</button>
@@ -53,7 +53,7 @@
 <section data-view="game" class="game" hidden>
  <div class="game-top"><button class="back" id="pause">MENU</button><span class="eyebrow" id="course-label">ROUND IN PLAY</span><button id="score-toggle" aria-expanded="false" aria-controls="scorecard">SCORECARD</button></div>
  <div class="hud">
-  <div><small>HOLE</small><b id="hud-hole">01 / 03</b></div><div><small>PAR</small><b id="hud-par">3</b></div><div><small>THROWS</small><b id="hud-throws">0</b></div><div><small>WIND</small><b id="hud-wind">CALM</b></div>
+  <div><small>HOLE</small><b id="hud-hole">01 / 05</b></div><div><small>PAR</small><b id="hud-par">3</b></div><div><small>THROWS</small><b id="hud-throws">0</b></div><div><small>WIND</small><b id="hud-wind">CALM</b></div>
  </div>
  <div class="field"><canvas id="course" width="640" height="420" tabindex="0" aria-label="Disc golf course. Use A and D or the arrow keys to aim. Hold and release Space to throw."></canvas>
   <div class="round-overlay" id="overlay" hidden><div class="round-card"><small id="overlay-label"></small><h2 id="overlay-title"></h2><div id="overlay-body"></div><button class="primary" data-action="next">CONTINUE</button><button id="finish-menu" data-panel="menu" hidden>MAIN MENU</button></div></div>

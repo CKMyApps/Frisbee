@@ -29,12 +29,40 @@
       palette: ['#252b24', '#49432b', '#65783c', '#7e8e45', '#9da952', '#c1b866'],
       ponds: [[440, 302, 70, 32], [499, 282, 36, 28]],
       trees: [[190, 311, 15], [248, 220, 17], [335, 179, 15], [414, 110, 17], [476, 170, 15], [113, 229, 13], [351, 283, 15]]
+    }, {
+      name: 'Street', venue: 'street', par: 4, tee: pt(73, 304), pin: pt(557, 111),
+      wind: {x: 12, y: 9, label: 'SE'},
+      centerline: [[-25,303],[181,303],[273,207],[409,207],[498,112],[665,112]],
+      ponds: [], trees: [], blockers: [
+        {x:152,y:260,r:18,kind:'car',paint:0}, {x:266,y:260,r:18,kind:'car',paint:1},
+        {x:338,y:170,r:18,kind:'car',paint:2}, {x:439,y:215,r:18,kind:'car',paint:0},
+        {x:516,y:73,r:18,kind:'car',paint:1}, {x:339,y:242,r:13,kind:'barrier'}
+      ]
+    }, {
+      name: 'Rooftop', venue: 'rooftop', par: 5, tee: pt(88, 326), pin: pt(542, 130),
+      wind: {x: -33, y: 23, label: 'SW'},
+      roofs: [[37,256,164,117],[227,169,170,139],[426,77,174,143]],
+      ponds: [], trees: [], blockers: [
+        {x:139,y:326,r:15,kind:'vent'}, {x:266,y:187,r:14,kind:'vent'},
+        {x:343,y:258,r:16,kind:'vent'}, {x:475,y:174,r:15,kind:'vent'},
+        {x:561,y:185,r:14,kind:'vent'}
+      ]
     }
+
   ];
+  const LEGACY_HOLE_COUNT = 3;
+  const holeCount = s => s?.version === 1 ? LEGACY_HOLE_COUNT : COURSES.length;
+  const venueFor = c => c.venue === 'street' ? 'Street' : c.venue === 'rooftop' ? 'Rooftop' : 'Original';
   function courseFor(state) { return COURSES[state.hole - 1]; }
   function withinBounds(x, y) { return x >= 15 && x <= W - 15 && y >= 16 && y <= H - 18; }
   function pondAt(course, x, y, margin = 0) {
     return course.ponds.some(([cx, cy, rx, ry]) => ((x - cx) / (rx + margin)) ** 2 + ((y - cy) / (ry + margin)) ** 2 <= 1);
+  }
+  const insideRoof = (course, x, y) => course.roofs.some(([rx,ry,w,h]) => x>=rx && x<=rx+w && y>=ry && y<=ry+h);
+  function safeSurface(course,x,y) {
+    if (course.venue === 'street') return fairDistance(course,x,y) <= 84;
+    if (course.venue === 'rooftop') return insideRoof(course,x,y);
+    return !pondAt(course,x,y);
   }
   function newFlight(lie, aim, power) {
     const p = clamp(power, 0, 1), speed = 55 + 275 * p;
@@ -59,7 +87,18 @@
         return {kind: 'tree', lie: withinBounds(lie.x, lie.y) && !pondAt(course, lie.x, lie.y) ? lie : f.origin, penalty: 0};
       }
     }
+    for (const b of course.blockers || []) {
+      const d=Math.hypot(f.x-b.x,f.y-b.y);
+      if(f.time<=.050 || d>b.r || f.height>(b.kind==='vent'?28:23)) continue;
+      const perimeter=b.r+4, offset=Math.atan2(f.y-b.y,f.x-b.x);
+      const lie=pt(b.x+Math.cos(offset)*perimeter,b.y+Math.sin(offset)*perimeter);
+      const viable=withinBounds(lie.x,lie.y) && safeSurface(course,lie.x,lie.y) &&
+        !course.blockers.some(o=>Math.hypot(lie.x-o.x,lie.y-o.y)<=o.r);
+      return {kind:b.kind,lie:viable?lie:f.origin,penalty:0};
+    }
     if (progress >= 1) {
+      if (course.venue && !safeSurface(course,f.x,f.y))
+        return {kind:course.venue === 'rooftop'?'edge':'bounds',lie:f.origin,penalty:1};
       if (pondAt(course, f.x, f.y)) return {kind: 'water', lie: f.origin, penalty: 1};
       return {kind: 'fairway', lie: pt(f.x, f.y), penalty: 0};
     }
@@ -86,7 +125,7 @@
           if (cost < best.cost) best = {aim, power, cost};
         } else {
           const left = dist(r.lie, course.pin);
-          const cost = Math.abs(left - (d >= 200 && p.strokes === 0 ? 70 : 0)) + r.penalty * 240 + (r.kind === 'tree' ? 40 : 0) + (r.kind === 'basket' ? 180 : 0);
+          const cost = Math.abs(left - (d >= 200 && p.strokes === 0 ? 70 : 0)) + r.penalty * 240 + (['tree','car','vent','barrier'].includes(r.kind) ? 40 : 0) + (r.kind === 'basket' ? 180 : 0);
           if (cost < best.cost) best = {aim, power, cost};
         }
       }
@@ -110,7 +149,7 @@
       return {name: safeMode === 'cpu' && i === 1 ? 'CPU' : supplied || (count === 1 ? 'Player' : 'Player ' + (i + 1)), cpu: safeMode === 'cpu' && i === 1,
         strokes: 0, holeScores: [], lie: {...COURSES[0].tee}};
     });
-    return {version: 1, mode: safeMode, hole: 1, phase: 'aim', activePlayer: 0, players, aim: angle(COURSES[0].tee, COURSES[0].pin), flight: null, message: players[0].name + ' on the tee.'};
+    return {version: 2, mode: safeMode, hole: 1, phase: 'aim', activePlayer: 0, players, aim: angle(COURSES[0].tee, COURSES[0].pin), flight: null, message: players[0].name + ' on the tee.'};
   }
   function prepareTurn(state, index, handoff = false) {
     state.activePlayer = index;
@@ -140,14 +179,16 @@
       state.message = p.name + ' · ' + grade;
     } else if (result.kind === 'water') state.message = 'Water hazard. +1 stroke; throw again from the previous lie.';
     else if (result.kind === 'bounds') state.message = 'Out of bounds. +1 stroke; throw again from the previous lie.';
+    else if (result.kind === 'edge') state.message = 'Off the roof. +1 stroke; throw again from the previous lie.';
+    else if (['car','vent','barrier'].includes(result.kind)) state.message = (result.kind==='car' ? 'Parked car' : result.kind==='vent' ? 'Roof vent' : 'Street barrier') + ' hit. Play from where the disc stopped.';
     else if (result.kind === 'tree') state.message = 'Tree hit. Play from where the disc stopped.';
-    else state.message = 'On the fairway.';
+    else state.message = course.venue==='street' ? 'On the street.' : course.venue==='rooftop' ? 'On the roof.' : 'On the fairway.';
     if (result.kind === 'basket' || p.strokes >= STROKE_LIMIT) {
       p.holeScores.push(p.strokes);
       if (result.kind !== 'basket') state.message = p.name + ' · 12-stroke limit.';
     }
     if (state.players.every(x => x.holeScores.length === state.hole)) {
-      state.phase = state.hole === COURSES.length ? 'finished' : 'holeComplete';
+      state.phase = state.hole === holeCount(state) ? 'finished' : 'holeComplete';
       return;
     }
     const n = state.players.length;
@@ -165,7 +206,7 @@
       state.message = state.players[state.activePlayer].name + ' ready to throw.';
       return true;
     }
-    if (state.phase !== 'holeComplete' || state.hole >= COURSES.length) return false;
+    if (state.phase !== 'holeComplete' || state.hole >= holeCount(state)) return false;
     state.hole++;
     for (const p of state.players) {p.strokes = 0; p.lie = {...courseFor(state).tee};}
     prepareTurn(state, (state.hole - 1) % state.players.length);
@@ -185,8 +226,8 @@
       Array.isArray(p.holeScores) && p.holeScores.length >= s.hole - 1 && p.holeScores.length <= s.hole &&
       p.holeScores.every(k => Number.isInteger(k) && k >= 1 && k <= STROKE_LIMIT);
     const phases = ['aim', 'cpuTurn', 'flight', 'handoff', 'holeComplete'];
-    if (!s || s.version !== 1 || !phases.includes(s.phase) || !['solo','cpu','local'].includes(s.mode) ||
-        !Number.isInteger(s.hole) || s.hole < 1 || s.hole > COURSES.length || !Array.isArray(s.players) ||
+    if (!s || ![1,2].includes(s.version) || !phases.includes(s.phase) || !['solo','cpu','local'].includes(s.mode) ||
+        !Number.isInteger(s.hole) || s.hole < 1 || s.hole > holeCount(s) || !Array.isArray(s.players) ||
         !Number.isInteger(s.activePlayer) || !s.players[s.activePlayer] || s.players.length < 1 || s.players.length > 4 ||
         !s.players.every(pvalid) || !Number.isFinite(s.aim) ||
         typeof s.message !== 'string' || s.message.length > 150) return false;
@@ -195,7 +236,7 @@
         (s.mode === 'cpu' && (s.players.length !== 2 || s.players[0].cpu || !s.players[1].cpu)) ||
         (s.mode === 'local' && (s.players.length < 2 || cpus))) return false;
     const allFinished = s.players.every(p => p.holeScores.length === s.hole);
-    if ((s.phase === 'holeComplete') !== allFinished || (allFinished && s.hole === COURSES.length) ||
+    if ((s.phase === 'holeComplete') !== allFinished || (allFinished && s.hole === holeCount(s)) ||
         (!allFinished && s.players[s.activePlayer].holeScores.length === s.hole)) return false;
     if (s.phase === 'cpuTurn' && !s.players[s.activePlayer].cpu) return false;
     if (s.phase === 'flight') {
@@ -232,7 +273,7 @@
       }
       if (localStorage.getItem(MIGRATION_KEY) === '1') return null;
       const legacy = JSON.parse(localStorage.getItem(LEGACY_SAVE_KEY));
-      if (!validSave(legacy)) return null;
+      if (!validSave(legacy) || legacy.version !== 1) return null;
       localStorage.setItem(SAVE_KEY, JSON.stringify(legacy));
       localStorage.setItem(MIGRATION_KEY, '1');
       return legacy;
@@ -266,8 +307,8 @@
     const a = audio.currentTime;
     if (name === 'throw') {tone(330,a,.09,.04,'square');tone(490,a+.045,.09,.035,'triangle');}
     else if (name === 'basket') [523,659,784,1047].forEach((n,i)=>tone(n,a+i*.055,.16,.042));
-    else if (name === 'water' || name === 'bounds') [280,160,105].forEach((n,i)=>tone(n,a+i*.055,.12,.032));
-    else if (name === 'tree') tone(123,a,.13,.07,'triangle');
+    else if (['water','bounds','edge'].includes(name)) [280,160,105].forEach((n,i)=>tone(n,a+i*.055,.12,.032));
+    else if (['tree','car','vent','barrier'].includes(name)) tone(123,a,.13,.07,'triangle');
     else if (name === 'fairway') tone(220,a,.08,.036,'triangle');
     else if (name === 'finish') [392,494,587,784,988].forEach((n,i)=>tone(n,a+i*.10,.20,.042));
   }
@@ -294,10 +335,10 @@
     const wind = {x: h.wind.x, y: h.wind.y, direction: h.wind.label, label: h.wind.label, strength: Math.round(Math.hypot(h.wind.x, h.wind.y))};
     const players = s ? s.players.map(p => ({name: p.name, cpu: p.cpu, strokes: p.strokes, holeScores: p.holeScores.slice(), total: played(p), lie: {...p.lie}})) : [];
     const low = players.length ? Math.min(...players.map(p => p.total)) : 0;
-    return {phase: !s ? 'menu' : suspended ? 'paused' : s.phase, mode: s?.mode || 'solo', hole: s?.hole || 1, totalHoles: COURSES.length,
-      course: h.name, courseName: h.name, par: h.par, totalPar: COURSES.reduce((sum, c) => sum + c.par, 0), wind: wind.label, windInfo: wind,
+    return {phase: !s ? 'menu' : suspended ? 'paused' : s.phase, mode: s?.mode || 'solo', hole: s?.hole || 1, totalHoles: holeCount(s),
+      course: h.name, courseName: h.name, venue: venueFor(h), nextVenue: s && s.hole < holeCount(s) ? venueFor(COURSES[s.hole]) : null, par: h.par, totalPar: COURSES.slice(0,holeCount(s)).reduce((sum, c) => sum + c.par, 0), wind: wind.label, windInfo: wind,
       windLabel: wind.label, power: Math.round(powerNow() * 100), charging: charge !== null, players, activePlayer: s?.activePlayer || 0,
-      aim: s?.aim ?? angle(h.tee, h.pin), message: messageOverride || s?.message || 'Three holes. Lowest score wins.',
+      aim: s?.aim ?? angle(h.tee, h.pin), message: messageOverride || s?.message || 'Three venues. Lowest score wins.',
       winners: s?.phase === 'finished' ? players.filter(p => p.total === low).map(p => p.name) : [], sound: enabled};
   }
   function emit() {
@@ -407,7 +448,92 @@
     polygon(g,'#a7a38a',[[x-10*s,y],[x-7*s,y-4*s],[x-2*s,y-8*s],[x+6*s,y-7*s],[x+12*s,y-2*s],[x+10*s,y]]);
     pixel(g,'#d2c6a1',x-6*s,y-5*s,9*s,2*s); pixel(g,'#6c795e',x,y-1*s,12*s,2*s);
   }
+  const urbanNoise = seed => () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 4294967296);
+  const URBAN_COLORS = {void:'#172329',voidBlock:'#263c46',voidEdge:'#354d53',shadow:'#0e1c22',building:['#544b53','#3d5363','#5b4640'],tile:'#ac9c92',glass:'#8eacac',wall:'#354852',deck:'#53727b',deckLine:'#3e5964',edge:'#a9c1bd',asphaltEdge:'#231f26',asphalt:'#3a3b46',asphaltMark:'#484b57',lane:'#f4c562',lamp:'#e2dab9',ink:'#202832',cars:['#c65044','#409e9e','#ce974c'],tee:'#e7a84f',target:'#c58d41'};
+  function urbanLandscape(course, hole) {
+    const g=paint, roof=course.venue==='rooftop',
+      c=URBAN_COLORS, r=urbanNoise(0x2174+hole*17);
+    const P=(shade,x,y,w,h)=>pixel(g,shade,x,y,w,h);
+    const speckle=(shade,x,y,w,h)=>{for(let i=0;i<Math.floor(w*h/180);i++)P(shade,x+r()*w,y+r()*h,1+(i%3===0),1);};
+    // All colored surfaces correspond to safe landing geometry; buildings below are scenery.
+    P(c.void,0,0,W,H);
+    const building=(x,y,w,h,i,muted=false)=>{
+      P(c.shadow,x+5,y+7,w,h); P(muted ? c.voidBlock : c.building[i%3],x,y,w,h);
+      P(muted?c.voidEdge:c.tile,x,y,w,2); P(muted?c.voidEdge:c.tile,x,y,2,h);
+      for(let j=12;j<h-12;j+=17)for(let k=11;k<w-11;k+=20)
+        P(muted ? c.voidEdge : r()>.31 ? c.glass : c.shadow,x+k,y+j,8,3);
+    };
+    if(roof){
+      for(let y=-51;y<H+30;y+=67) for(let x=-43;x<W+40;x+=81)
+        building(x+r()*9,y+r()*8,49+r()*19,36+r()*16,0,true);
+      for(const [x,y,w,h] of course.roofs){
+        P(c.shadow,x+5,y+5,w+5,h+19);
+        P(c.wall,x,y+10,w,h+10);
+        for(let u=8;u<w-5;u+=15)P(c.glass,x+u,y+h+6,7,7);
+        P(c.deck,x,y,w+1,h+1);
+        speckle(c.tile,x+3,y+3,w-7,h-7);
+        for(let u=15;u<w;u+=18)P(c.deckLine,x+u,y+4,1,h-8);
+        for(let v=15;v<h;v+=18)P(c.deckLine,x+4,y+v,w-8,1);
+        P(c.edge,x,y,w+1,3); P(c.edge,x,y,3,h+1);
+        P(c.edge,x+w-2,y,3,h+1); P(c.edge,x,y+h-2,w+1,3);
+        for(let u=7;u<w-5;u+=12) {P(c.tile,x+u,y+1,6,1); P(c.tile,x+u,y+h-1,6,1);}
+      }
+      g.textAlign='center';g.font='bold 8px monospace';g.fillStyle=c.edge;
+      g.fillText('ROOF A',156,360);g.fillText('ROOF B',351,294);g.fillText('ROOF C',551,209);
+    }else{
+      const line=(shade,width)=>{
+        g.strokeStyle=shade;g.lineWidth=width;g.lineJoin='round';g.lineCap='round';g.beginPath();
+        course.centerline.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.stroke();
+      };
+      line(c.edge,168);line(c.deck,163);line(c.asphaltEdge,126);line(c.asphalt,121);
+      for(let i=0;i<1900;i++){
+        const x=r()*W,y=r()*H,d=fairDistance(course,x,y);
+        if(d<58)P(c.asphaltMark,x,y,1+(i%4===0),1);
+        else if(d<80&&d>65&&i%3===0)P(c.deckLine,x,y,3,1);
+      }
+      g.setLineDash([15,12]);line(c.lane,2);g.setLineDash([]);
+      for(const [x,y] of [[108,303],[529,112]])for(let j=-42;j<=42;j+=9)P(c.edge,x-6,y+j,13,4);
+      for(const [x,y,w,h,i] of [[0,20,108,160,0],[118,-15,99,138,1],[230,0,110,116,2],
+        [351,-22,65,132,0],[430,-43,92,73,2],[542,-53,98,81,1],[358,313,97,107,1],
+        [472,285,86,135,0],[571,226,71,194,2],[0,400,203,37,2],[215,398,123,40,0]])
+        building(x,y,w,h,i);
+      for(let i=0;i<course.centerline.length;i++){
+        const [x,y]=course.centerline[i];
+        if(x<0||x>W)continue;
+        for(const yy of [y-66,y+66]){
+          P(c.shadow,x+8,yy+2,10,3);P(c.lamp,x+4,yy-14,2,18);P(c.lamp,x+4,yy-14,8,2);P(c.lane,x+10,yy-12,3,2);
+        }
+      }
+    }
+    for(const b of course.blockers){
+      const {x,y,r}=b;
+      if(b.kind==='car'){
+        P(c.shadow,x-r-2,y-9,2*r+5,20);P(c.ink,x-r+2,y-9,2*r-4,18);
+        P(c.cars[b.paint],x-r,y-7,2*r,14);
+        P(c.glass,x-7,y-6,15,12);P(c.cars[b.paint],x-3,y-7,7,14);
+        P(c.edge,x-r+1,y-6,2,3);P(c.edge,x-r+1,y+3,2,3);
+        P(c.lane,x+r-4,y-6,3,3);P(c.lane,x+r-4,y+3,3,3);
+      } else if(b.kind==='vent'){
+        P(c.shadow,x-r+4,y-r+8,2*r,2*r-1);P(c.ink,x-r+1,y-r+2,2*r-2,2*r-2);
+        P(c.glass,x-r+3,y-r+4,2*r-6,2*r-6);P(c.edge,x-r+3,y-r+4,2*r-6,2);
+        for(let j=-r+7;j<r-4;j+=4)P(c.ink,x-r+6,y+j,2*r-12,2);
+      } else {
+        P(c.shadow,x-r,y-6,2*r+3,15);P(c.edge,x-r,y-7,2*r,12);
+        for(let j=-r;j<r-2;j+=6)P(c.ink,x+j,y-7,3,10);
+      }
+    }
+    const tee=course.tee, pin=course.pin;
+    P(c.ink,tee.x-26,tee.y-15,51,29);P(c.tee,tee.x-23,tee.y-12,45,23);
+    for(let i=0;i<4;i++)P(c.edge,tee.x-20+i*10,tee.y+7,5,2);
+    g.font='bold 8px monospace';g.fillStyle=c.ink;g.textAlign='center';g.fillText('TEE',tee.x,tee.y+3);
+    for(let row=-6;row<=6;row++){
+      const width=Math.round(24*Math.sqrt(1-(row/6.2)**2));
+      P(row%2?c.target:c.tee,pin.x-width,pin.y+row*3,width*2,3);
+    }
+    drawnCourse=hole;
+  }
   function landscape(course, hole) {
+    if(course.venue) {urbanLandscape(course,hole);return;}
     if (!paint) return;
     const p = course.palette, r = seeded(0x2a31 + hole * 81), g = paint;
     pixel(g,p[0],0,0,W,H);
@@ -538,7 +664,7 @@
     else if(state?.phase !== 'finished' && state?.phase !== 'holeComplete') disc(g,lie.x,lie.y-18,0,false);
     for(let i=0;i<5;i++) {
       const color=i===h-1?'#f3c068':'#263b31';
-      if(i<COURSES.length)pixel(g,color,21+i*10,19,7,3);
+      if(i<holeCount(state))pixel(g,color,21+i*10,19,7,3);
     }
     g.font='bold 11px monospace';g.textAlign='left';
     const subtitle=course.name.toUpperCase();
